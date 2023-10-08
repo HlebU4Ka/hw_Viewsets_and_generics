@@ -10,7 +10,7 @@ class LessonAPITestCase(APITestCase):
         # Создаем пользователя
         self.user = User.objects.create_user(username='testuser', password='password')
         # Создаем курс
-        self.course = Course.objects.create(title='Test Course', description='Test Description')
+        self.course = Course.objects.create(title='Test_Course', description='Test_Description')
         # Создаем урок
         self.lesson = Lesson.objects.create(title='Test Lesson', description='Test Lesson Description',
                                             course=self.course)
@@ -24,8 +24,6 @@ class LessonAPITestCase(APITestCase):
         url = reverse('lesson-detail', kwargs={'pk': self.lesson.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    # Добавьте тесты для создания, обновления и удаления уроков
 
 
 class CourseAPITestCase(APITestCase):
@@ -44,8 +42,6 @@ class CourseAPITestCase(APITestCase):
         url = reverse('course-detail', kwargs={'pk': self.course.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    # Добавьте тесты для создания, обновления и удаления курсов
 
 
 class SubscriptionAPITestCase(APITestCase):
