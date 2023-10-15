@@ -1,9 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-
-from myproject.myproject.utils import is_youtube_link
-from myproject.users_app.models import UserProfile
-
 avatar_settings = {'null': True, 'blank': True}
 
 
@@ -37,19 +33,20 @@ class Lesson(models.Model):
 
     def save(self, *args, **kwargs):
         """
-               Переопределенный метод сохранения урока.
+        Переопределенный метод сохранения урока.
 
-               Проверяет каждую ссылку в материалах и разрешает только ссылки на YouTube.
+        Проверяет каждую ссылку в материалах и разрешает только ссылки на YouTube.
 
-               Args:
-                   *args: Аргументы.
-                   **kwargs: Ключевые аргументы.
+        Args:
+            *args: Аргументы.
+            **kwargs: Ключевые аргументы.
 
-               Raises:
-                   ValidationError: Если найдены ссылки на сторонние ресурсы, отличные от YouTube.
+        Raises:
+            ValidationError: Если найдены ссылки на сторонние ресурсы, отличные от YouTube.
 
-               """
+        """
         # Проверка каждой ссылки в материалах
+        from myproject.utils import is_youtube_link
         for link in self.materials.split('\n'):
             if not is_youtube_link(link):
                 raise ValidationError('В материалах разрешены только ссылки на YouTube.')
@@ -64,19 +61,18 @@ class Lesson(models.Model):
 
 class Subscription(models.Model):
     """
-        Модель подписки пользователя на курс.
+    Модель подписки пользователя на курс.
 
-        Fields:
-            user (UserProfile): Связь с профилем пользователя.
-            course (Course): Связь с курсом, на который подписан пользователь.
-            subscribed_at (datetime): Время подписки пользователя.
+    Fields:
+        user (str): Строковое имя пользователя.
+        course (Course): Связь с курсом, на который подписан пользователь.
+        subscribed_at (datetime): Время подписки пользователя.
 
-        Methods:
-            __str__(): Возвращает строковое представление объекта.
+    Methods:
+        __str__(): Возвращает строковое представление объекта.
 
-        """
-
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    """
+    user = models.CharField(max_length=255)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     subscribed_at = models.DateTimeField(auto_now_add=True)
 
