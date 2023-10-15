@@ -2,8 +2,15 @@ from django.shortcuts import render, get_object_or_404
 from django.views import View
 from rest_framework import generics, viewsets, status
 from rest_framework.response import Response
-from .models import Course, Lesson
-from .serializers import LessonSerializer, CourseSerializer
+from .models import Lesson, Payment, Course
+from .serializers import LessonSerializer, PaymentSerializer
+from rest_framework.filters import OrderingFilter
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.permissions import IsAuthenticated
+from courses.serializers import CourseSerializer
+from courses.permissions import IsOwnerOrReadOnly
 
 
 class CourseListView(View):
@@ -31,6 +38,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
 
 
+class CourseDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+
 class LessonListCreateView(generics.ListCreateAPIView):
     """Представление для отображения и создания уроков."""
 
@@ -49,6 +62,7 @@ class LessonViewSet(viewsets.ViewSet):
     """ViewSet для выполнения операций CRUD над уроками."""
 
     queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
 
     def list(self, request):
         """Обрабатывает GET-запрос для вывода списка уроков."""
@@ -85,3 +99,56 @@ class LessonViewSet(viewsets.ViewSet):
         lesson = get_object_or_404(Lesson, pk=pk)
         lesson.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PaymentListView(generics.ListAPIView):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    filter_backends = (OrderingFilter,)
+    ordering_fields = ('date_paid',)
+
+
+class CustomTokenObtainView(APIView):
+    def post(self, request):
+        # Получение токена
+        serializer = TokenObtainPairSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh)
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class YourView(APIView):
+    """
+    API View для примера.
+
+    Этот пример демонстрирует использование авторизации через JWT.
+    В данном случае, доступ к этому эндпоинту разрешен только для авторизованных пользователей.
+
+    Methods:
+        get(request): Обработчик HTTP GET запроса.
+
+    Attributes:
+        permission_classes (list): Список классов разрешений.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Обработчик HTTP GET запроса.
+
+        Args:
+            request (HttpRequest): Объект запроса.
+
+        Returns:
+            Response: Объект ответа.
+
+        """
+        # Ваш код
+
+        return Response("This is a protected view")
