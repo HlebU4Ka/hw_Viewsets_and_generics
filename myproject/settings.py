@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
     'users_app',
     'courses',
+    "drf_yasg",
 
 ]
 
