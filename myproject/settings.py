@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
-import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -45,7 +44,9 @@ INSTALLED_APPS = [
 
     'users_app',
     'courses',
+
     "drf_yasg",
+
 
 ]
 
@@ -57,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -146,3 +149,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'TOKEN_SERIALIZER': 'courses.serializers.CustomTokenObtainPairSerializer'
 }
+
+
+CORS_ORIGIN_ALLOW_ALL = True  # Разрешить доступ со всех доменов
+CORS_ALLOW_CREDENTIALS = True  # Разрешить отправку учетных данных
