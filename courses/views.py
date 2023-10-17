@@ -6,15 +6,18 @@ from .models import Lesson, Payment, Course
 from .serializers import LessonSerializer, PaymentSerializer
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.permissions import IsAuthenticated
 from courses.serializers import CourseSerializer
 from courses.permissions import IsOwnerOrReadOnly
-
+from rest_framework.decorators import action
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CourseListView(View):
     """Представление для отображения списка курсов."""
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
 
     def get(self, request):
         """Обрабатывает GET-запрос для отображения списка курсов."""
@@ -24,6 +27,8 @@ class CourseListView(View):
 
 class CourseDetailView(View):
     """Представление для отображения деталей курса."""
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
 
     def get(self, request, pk):
         """Обрабатывает GET-запрос для отображения конкретного курса."""
@@ -36,6 +41,14 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['get'])
+    def lessons(self, request, pk=None):
+        course = self.get_object()
+        lessons = Lesson.objects.filter(course=course)
+        serializer = LessonSerializer(lessons, many=True)
+        return Response(serializer.data)
 
 
 class CourseDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -63,6 +76,14 @@ class LessonViewSet(viewsets.ViewSet):
 
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['get'])
+    def payments(self, request, pk=None):
+        lesson = self.get_object()
+        payments = Payment.objects.filter(lesson=lesson)
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
 
     def list(self, request):
         """Обрабатывает GET-запрос для вывода списка уроков."""
@@ -116,7 +137,7 @@ class CustomTokenObtainView(APIView):
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
             return Response({
-                'access': str(refresh.access_token),
+                'access': str(refresh.access_token_key),
                 'refresh': str(refresh)
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
