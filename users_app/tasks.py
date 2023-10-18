@@ -25,15 +25,16 @@ def send_update_notification_emails(course_title):
         message = f"Привет!\n\nКурс {course_title} был обновлен."
         send_mail('Уведомление о обновлении курса', message, 'pass', [user_email])
 
+
 @shared_task
 def check_and_lock_inactive_users():
     # Определяем "неактивность" как отсутствие входа более месяца
-        one_month_ago = timezone.now() - timezone.timedelta(days=30)
+    one_month_ago = timezone.now() - timezone.timedelta(days=30)
 
-        # Находим пользователей, неактивных более месяца
-        inactive_users = User.objects.filter(last_login__lte=one_month_ago, is_active=True)
+    # Находим пользователей, неактивных более месяца
+    inactive_users = User.objects.filter(last_login__lte=one_month_ago, is_active=True)
 
-        # Блокируем неактивных пользователей
-        for user in inactive_users:
-            user.is_active = False
-            user.save()
+    # Блокируем неактивных пользователей
+    for user in inactive_users:
+        user.is_active = False
+        user.save()

@@ -1,3 +1,4 @@
+import stripe as stripe
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets, status
 from rest_framework.response import Response
@@ -162,3 +163,25 @@ class YourView(APIView):
         # Ваш код
 
         return Response("This is a protected view")
+
+
+
+#Test Secret Key
+stripe.api_key = "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+
+class PaymentCreateView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Получаем данные из запроса (или передаем их в теле запроса)
+        amount = request.data.get('amount')  # сумма платежа в центах
+        currency = request.data.get('currency')  # валюта (например, 'usd')
+
+        # Создаем платеж в Stripe
+        payment_intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency=currency
+        )
+
+        # Возвращаем клиенту данные для оплаты
+        return Response({
+            'client_secret': payment_intent.client_secret
+        }, status=status.HTTP_200_OK)
