@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from courses.serializers import CourseSerializer
 from courses.permissions import IsOwnerOrReadOnly
 from rest_framework.decorators import action
+from users_app.tasks import send_update_notification_emails
 
 
 class IsModerator(permissions.BasePermission):
@@ -19,6 +20,7 @@ class IsModerator(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return request.user and request.user.is_staff
+
 
 class CourseListView(generics.ListCreateAPIView):
     """Представление для отображения списка курсов и создания нового курса."""
@@ -30,6 +32,11 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Представление для отображения деталей курса, обновления и удаления курса."""
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+        # Запускаем задачу для отправки уведомлений
+        send_update_notification_emails.delay(course.title)
 
 
 class CourseViewSet(viewsets.ModelViewSet):

@@ -4,6 +4,9 @@ from rest_framework import generics, viewsets
 from .models import UserProfile
 from .serializers import UserProfileSerializer
 from rest_framework import permissions
+from django.apps import AppConfig
+from django.db.models.signals import post_migrate
+from users_app.tasks import check_and_lock_inactive_users
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -30,6 +33,7 @@ class IsStaffOrReadOnly(permissions.BasePermission):
 class UserProfileDetailView(View):
     """Представление для отображения деталей профиля пользователя."""
     permission_classes = [IsOwnerOrReadOnly, IsStaffOrReadOnly]
+
     def get(self, request, pk):
         """Обрабатывает GET-запрос для отображения конкретного профиля пользователя."""
         user_profile = UserProfile.objects.get(pk=pk)
@@ -51,6 +55,7 @@ class UserProfileListCreateView(generics.ListCreateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsOwnerOrReadOnly, IsStaffOrReadOnly]
 
+
 class UserProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Представление для получения, обновления и удаления профиля пользователя."""
 
@@ -65,3 +70,15 @@ class UserProfileListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsOwnerOrReadOnly, IsStaffOrReadOnly]
 
+
+class UsersAppConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'users_app'
+
+    def ready(self):
+        # Подключаем обработчик сигнала post_migrate
+        post_migrate.connect(self.on_post_migrate, sender=self)
+
+    def on_post_migrate(self, sender, **kwargs):
+        # Вызываем задачу check_and_lock_inactive_users при старте сервера
+        check_and_lock_inactive_users.delay()
