@@ -9,9 +9,8 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from datetime import timedelta
 from pathlib import Path
-from time import timezone
+from datetime import timedelta
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -159,8 +158,8 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # Расписание для Celery Beat: проверка каждый день в полночь
 CELERY_BEAT_SCHEDULE = {
     'check_inactive_users': {
-        'task': 'yourapp.tasks.check_and_lock_inactive_users',
-        'schedule': timezone.timedelta(days=1),
+        'task': 'myproject.tasks.check_and_lock_inactive_users',
+        'schedule': timedelta(days=1),
     },
 }
 

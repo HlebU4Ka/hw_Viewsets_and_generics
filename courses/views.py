@@ -1,39 +1,35 @@
-from django.shortcuts import render, get_object_or_404
-from django.views import View
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets, status
 from rest_framework.response import Response
 from .models import Lesson, Payment, Course
 from .serializers import LessonSerializer, PaymentSerializer
 from rest_framework.filters import OrderingFilter
 from rest_framework.views import APIView
-
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 from courses.serializers import CourseSerializer
 from courses.permissions import IsOwnerOrReadOnly
 from rest_framework.decorators import action
-from rest_framework_simplejwt.tokens import RefreshToken
 
-class CourseListView(View):
-    """Представление для отображения списка курсов."""
+
+class IsModerator(permissions.BasePermission):
+    """
+        Проверка, является ли пользователь модератором (с правами is_staff).
+        """
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff
+
+class CourseListView(generics.ListCreateAPIView):
+    """Представление для отображения списка курсов и создания нового курса."""
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
-    def get(self, request):
-        """Обрабатывает GET-запрос для отображения списка курсов."""
-        courses = Course.objects.all()
-        return render(request, 'courses/course_list.html', {'courses': courses})
 
-
-class CourseDetailView(View):
-    """Представление для отображения деталей курса."""
+class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Представление для отображения деталей курса, обновления и удаления курса."""
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-
-    def get(self, request, pk):
-        """Обрабатывает GET-запрос для отображения конкретного курса."""
-        course = get_object_or_404(Course, pk=pk)
-        return render(request, 'courses/course_detail.html', {'course': course})
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -41,7 +37,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsModerator]
 
     @action(detail=True, methods=['get'])
     def lessons(self, request, pk=None):
@@ -127,20 +123,6 @@ class PaymentListView(generics.ListAPIView):
     queryset = Payment.objects.all()
     filter_backends = (OrderingFilter,)
     ordering_fields = ('date_paid',)
-
-
-class CustomTokenObtainView(APIView):
-    def post(self, request):
-        # Получение токена
-        serializer = TokenObtainPairSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'access': str(refresh.access_token_key),
-                'refresh': str(refresh)
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class YourView(APIView):
