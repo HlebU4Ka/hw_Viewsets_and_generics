@@ -1,6 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
-
+from django.conf import settings
 avatar_settings = {'null': True, 'blank': True}
 
 
@@ -21,8 +20,7 @@ class UserProfile(models.Model):
     Methods:
         __str__(): Возвращает строковое представление объекта.
     """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=30, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
     last_name = models.CharField(max_length=30, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
     country = models.CharField(max_length=50, blank=True)

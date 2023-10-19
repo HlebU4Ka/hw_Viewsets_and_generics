@@ -1,9 +1,10 @@
 from django_filters import rest_framework as filters
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
-
-
+from django.contrib.auth.models import AbstractUser, Permission, Group
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 avatar_settings = {'null': True, 'blank': True}
 
 
@@ -13,11 +14,22 @@ class Course(models.Model):
     title = models.CharField(max_length=100)
     preview_image = models.ImageField(upload_to='course_previews/', **avatar_settings)
     description = models.CharField(max_length=255)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                              default=1)
 
     def __str__(self):
         """Возвращает строковое представление курса."""
         return self.title
+
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    groups = models.ManyToManyField(Group, related_name='customuser_set', blank=True)
+    user_permissions = models.ManyToManyField(Permission, related_name='customuser_set', blank=True)
+
+    def __str__(self):
+        return self.username
+
 
 
 class LessonManager(models.Manager):
@@ -35,7 +47,7 @@ class Lesson(models.Model):
     preview_image = models.ImageField(upload_to='lesson_previews/', **avatar_settings)
     video_links = models.URLField()
     materials = models.TextField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
 
     def save(self, *args, **kwargs):
         """
@@ -78,9 +90,9 @@ class Subscription(models.Model):
         __str__(): Возвращает строковое представление объекта.
 
     """
-    user = models.CharField(max_length=255)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     subscribed_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
 
     def __str__(self):
         return f'{self.user} subscribed to {self.course}'
@@ -107,14 +119,11 @@ class CourseManager(models.Manager):
 
 
 class Payment(models.Model):
-    objects = None
-    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь", default=1)
     date_paid = models.DateTimeField(verbose_name="Дата оплаты")
-    paid_item = models.ForeignKey(
-        models.Q(course__isnull=False) and Course or Lesson,
-        on_delete=models.CASCADE,
-        verbose_name="Оплаченный курс или урок"
-    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    paid_item = GenericForeignKey('content_type', 'object_id')
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма оплаты")
     payment_method = models.CharField(
         max_length=20,

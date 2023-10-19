@@ -163,6 +163,5 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-
 CORS_ORIGIN_ALLOW_ALL = True  # Разрешить доступ со всех доменов
 CORS_ALLOW_CREDENTIALS = True  # Разрешить отправку учетных данных

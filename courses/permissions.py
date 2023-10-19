@@ -10,3 +10,13 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         # Разрешено редактировать только владельцу
         return obj.owner == request.user
+
+
+class IsModerator(permissions.BasePermission):
+    """
+        Проверка, является ли пользователь модератором (с правами is_staff).
+        """
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_staff
+
