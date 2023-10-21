@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser, Permission, Group
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+
 avatar_settings = {'null': True, 'blank': True}
 
 
@@ -29,7 +30,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
 
 
 class LessonManager(models.Manager):

@@ -10,7 +10,9 @@ from courses.serializers import CourseSerializer
 from rest_framework.decorators import action
 from .models import Lesson, Payment
 from courses.models import Course
-from .permissions import IsModerator
+from .permissions import IsModerator, IsOwnerOrReadOnly
+from django.views import View
+from django.http import JsonResponse
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -23,9 +25,17 @@ class CourseViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Разрешения для разных действий
         if self.action == "create":
-            return [IsAuthenticated(), IsModerator()]
-        elif self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsModerator()]
+            # Модератор не может создать курс или урок
+            return [IsAuthenticated(), ~IsModerator()]
+        elif self.action in ["update", "partial_update"]:
+            # Модератор может редактировать любой курс или урок
+            # Обычный пользователь может редактировать только свои курсы и уроки
+            return [IsAuthenticated(), IsModerator() | IsOwnerOrReadOnly()]
+        elif self.action == "destroy":
+            # Модератор может видеть и редактировать, но не удалять урок
+            # Обычный пользователь не имеет доступа к удалению
+            return [IsAuthenticated(), IsModerator() | IsOwnerOrReadOnly()]
+        # Другие случаи обработайте аналогично
         return super().get_permissions()
 
     @action(detail=True, methods=['get'])
@@ -114,3 +124,29 @@ class PaymentCreateView(APIView):
         return Response({
             'client_secret': payment_intent.client_secret
         }, status=status.HTTP_200_OK)
+
+
+class PaymentView(View):
+    def post(self, request):
+        amount = 1000  # Сумма оплаты
+        currency = "usd"  # Валюта
+
+        try:
+            payment_intent = stripe.PaymentIntent.create(
+                amount=amount,
+                currency=currency
+            )
+
+            # Создаем новый объект Payment и сохраняем его в базе данных
+            payment = Payment.objects.create(
+                user=request.user,  # Укажите пользователя, совершившего платеж
+                date_paid=payment_intent.created,
+                content_type=None,  # Укажите соответствующий content_type
+                object_id=None,  # Укажите соответствующий object_id
+                amount=amount / 100.0,  # Сумма в долларах
+                payment_method="stripe"  # Укажите метод оплаты
+            )
+
+            return JsonResponse({"client_secret": payment_intent.client_secret})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
