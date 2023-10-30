@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser, Permission, Group
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import User
 
 avatar_settings = {'null': True, 'blank': True}
 
@@ -90,12 +91,12 @@ class Subscription(models.Model):
         __str__(): Возвращает строковое представление объекта.
 
     """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     subscribed_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
 
     def __str__(self):
-        return f'{self.user} subscribed to {self.course}'
+        return f"{self.user.username} подписан на {self.course.title}"
 
 
 class CourseManager(models.Manager):
