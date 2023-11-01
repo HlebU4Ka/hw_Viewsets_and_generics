@@ -30,18 +30,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action in ["update", "partial_update"]:
             permission_classes = [IsAuthenticated, IsModerator | IsOwnerOrReadOnly]
         elif self.action in ["destroy", "retrieve"]:
-            if self.action == "create":
-                # Модератор не может создать курс или урок
-                return [IsAuthenticated(), ~IsModerator()]
-            elif self.action in ["update", "partial_update"]:
-                # Модератор может редактировать любой курс или урок
-                # Обычный пользователь может редактировать только свои курсы и уроки
-                return [IsAuthenticated(), IsModerator() | IsOwnerOrReadOnly()]
-            elif self.action == "destroy":
-                # Модератор может видеть и редактировать, но не удалять урок
-                # Обычный пользователь не имеет доступа к удалению
-                return [IsAuthenticated(), IsModerator() | IsOwnerOrReadOnly()]
-
+            permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
         return [permission() for permission in permission_classes]
 
     @action(detail=True, methods=['get'])
