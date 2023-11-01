@@ -16,6 +16,7 @@ class UserProfile(models.Model):
         courses (ManyToManyField): Список курсов, на которые подписан пользователь.
         avatar (ImageField): Аватар пользователя.
         is_moderator (bool): Флаг, указывающий, является ли пользователь модератором.
+        email (EmailField): Email пользователя.
 
     Methods:
         __str__(): Возвращает строковое представление объекта.
@@ -27,6 +28,9 @@ class UserProfile(models.Model):
     courses = models.ManyToManyField('courses.Course', blank=True)
     avatar = models.ImageField(upload_to='avatars/', **avatar_settings)
     is_moderator = models.BooleanField(default=False)
+    email = models.EmailField(max_length=254, blank=True)
+    first_name = models.CharField(max_length=30, blank=True)
+
     objects = models.Manager()
 
     def __str__(self):

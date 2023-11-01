@@ -158,7 +158,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # Расписание для Celery Beat: проверка каждый день в полночь
 CELERY_BEAT_SCHEDULE = {
     'check_inactive_users': {
-        'task': 'myproject.tasks.check_and_lock_inactive_users',
+        'task': 'users_app.tasks.check_and_lock_inactive_users',
         'schedule': timedelta(days=1),
     },
 }
